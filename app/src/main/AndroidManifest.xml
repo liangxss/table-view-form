@@ -28,6 +28,7 @@
         <activity android:name=".TableListActivity" />
         <activity android:name=".TanTanActivity" />
         <activity android:name=".PagerModeActivity" />
+        <activity android:name=".PagerModeDemoActivity" />
         <activity android:name=".ManyActivity" />
         <activity android:name=".AlignActivity" />
         <activity android:name=".ArrayModeActivity" />
