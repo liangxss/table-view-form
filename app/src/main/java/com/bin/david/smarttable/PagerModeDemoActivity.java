@@ -29,6 +29,7 @@ import com.bin.david.form.data.format.count.ICountFormat;
 import com.bin.david.form.data.format.draw.IDrawFormat;
 import com.bin.david.form.data.format.draw.ImageResDrawFormat;
 import com.bin.david.form.data.format.draw.TextImageDrawFormat;
+import com.bin.david.form.data.format.draw.TextOperationDrawFormat;
 import com.bin.david.form.data.format.title.TitleImageDrawFormat;
 import com.bin.david.form.data.style.FontStyle;
 import com.bin.david.form.data.table.PageTableData;
@@ -51,7 +52,7 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
     private PageTableData<UserInfoDemo> tableData;
     private PointF clickPoint;
     private int fontSize = 20;
-    private int[] colors = {R.color.github_con_1, R.color.github_con_2, R.color.github_con_3};
+    private int[] colors;
 
 
     @Override
@@ -59,6 +60,7 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pager);
         FontStyle.setDefaultTextSize(DensityUtils.sp2px(this, 15)); //设置全局字体大小
+        colors = new int[]{getResources().getColor(R.color.github_con_1), getResources().getColor(R.color.github_con_2), getResources().getColor(R.color.github_con_3)};
         table = (SmartTable<UserInfoDemo>) findViewById(R.id.table);
         table.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -224,7 +226,7 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
                         float rectRight = rect.right - right * (data.size() - (i + 1));
 
                         // 绘制背景颜色
-                        paint.setColor(getResources().getColor(colors[i]));
+                        paint.setColor(colors[i]);
                         canvas.drawRect(rect.left + (right * i), rect.top, rectRight, rect.bottom, paint);
 
                         // 绘制文字
@@ -250,7 +252,43 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
 
 
         });
-        tableData = new PageTableData<>("测试", testData, columnCheck1, nameColumn, ageColumn, columnCheck2, timeColumn, columnOperate);
+        TextOperationDrawFormat<List> textOperationDrawFormat = new TextOperationDrawFormat<List>(size, size, getResources().getColor(R.color.colorAccent), colors) {
+            @Override
+            public int measureWidth(Column<List> column, int position, TableConfig config) {
+                return DensityUtils.dp2px(PagerModeDemoActivity.this, 120);
+            }
+
+            @Override
+            public int measureHeight(Column<List> column, int position, TableConfig config) {
+                return DensityUtils.dp2px(PagerModeDemoActivity.this, 30);
+            }
+
+            @Override
+            public void draw(Canvas canvas, Rect rect, CellInfo<List> cellInfo, TableConfig config) {
+                super.draw(canvas, rect, cellInfo, config);
+            }
+
+            @Override
+            protected Context getContext() {
+                return PagerModeDemoActivity.this;
+            }
+
+            @Override
+            protected PointF getClickPoint() {
+                return clickPoint;
+            }
+
+        };
+        textOperationDrawFormat.setOnTextOperateItemClickListener(new TextOperationDrawFormat.OnTextOperateItemClickListener() {
+            @Override
+            public void onClick(String text, CellInfo cellInfo) {
+                Toast.makeText(PagerModeDemoActivity.this, "点击了" + text + " 用户：" +  testData.get(cellInfo.row).getName(), Toast.LENGTH_SHORT).show();
+
+            }
+        });
+        Column<List> columnOperate1 = new Column<>("操作1", "childListData.child", textOperationDrawFormat);
+
+        tableData = new PageTableData<>("测试", testData, columnCheck1, nameColumn, ageColumn, columnCheck2, timeColumn, columnOperate, columnOperate1);
 
         tableData.setTitleDrawFormat(new TitleImageDrawFormat(size, size, TitleImageDrawFormat.RIGHT, 10) {
             @Override
