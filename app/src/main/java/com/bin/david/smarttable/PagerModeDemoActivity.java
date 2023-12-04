@@ -5,12 +5,14 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -48,7 +50,8 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
     private SmartTable<UserInfoDemo> table;
     private PageTableData<UserInfoDemo> tableData;
     private PointF clickPoint;
-
+    private int fontSize = 20;
+    private int[] colors = {R.color.github_con_1, R.color.github_con_2, R.color.github_con_3};
 
 
     @Override
@@ -206,60 +209,38 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
             @Override
             public void draw(Canvas canvas, Rect rect, CellInfo<List> cellInfo, TableConfig config) {
                 Paint paint = config.getPaint();
+                paint.setStyle(Paint.Style.FILL);
                 List<String> data = cellInfo.data;
                 if (data!= null && data.size() > 0){
-                    // 10--30
-                    /*int right = rect.right - (rect.right - rect.left) / data.size();
+                    // 获取每份宽度
+                    float right = (rect.right - rect.left) / data.size();
+//                    Log.e("PagerModeDemoActivity", "right: " + right);
                     for (int i = 0; i < data.size(); i++) {
-                        paint.setStyle(Paint.Style.FILL);
-                        paint.setColor(getResources().getColor(R.color.arc3));
-                        canvas.drawRect(rect.left, rect.top, right * (i + 1), rect.bottom, paint);
+                        // 每块右坐标为：当前rect右坐标 减 每块宽度乘以剩余份数
+                        // 例如：每份70，右坐标800，
+                        // 第一块为：800-(70*(3-(0+1)))=660
+                        // 第二块为：800-(70*(3-(1+1)))=730
+                        // 第二块为：800-(70*(3-(2+1)))=800
+                        float rectRight = rect.right - right * (data.size() - (i + 1));
 
-                        paint.setColor(getResources().getColor(R.color.arc1));
-                        paint.setTextSize(14 * table.getConfig().getZoom()); //以px为单位，乘以缩放
+                        // 绘制背景颜色
+                        paint.setColor(getResources().getColor(colors[i]));
+                        canvas.drawRect(rect.left + (right * i), rect.top, rectRight, rect.bottom, paint);
+
+                        // 绘制文字
+                        paint.setColor(getResources().getColor(R.color.colorAccent));
+                        paint.setTextSize(fontSize * table.getConfig().getZoom()); //以px为单位，乘以缩放
+                        paint.setTypeface(Typeface.DEFAULT_BOLD);
                         paint.setTextAlign(Paint.Align.CENTER);
-//                        canvas.drawText(text,rect.centerX(), DrawUtils.getTextCenterY(rect.centerY(),paint) - 14 / 2 + 0, paint);
-                        canvas.drawText(data.get(i),rect.left + 20, rect.top + 20, paint);
+                        // (每份宽度 * 当前份)-(每份除以2)
+                        float textX = (right * (i + 1) + rect.left) - (right / 2);
+                        float textY = DrawUtils.getTextCenterY(rect.centerY(),paint);
+                        canvas.drawText(data.get(i),textX, textY, paint);
 
-                        if (DrawUtils.isClick(rect.left, rect.top, right * (i + 1), rect.bottom, clickPoint)) {
+                        // 点击事件
+                        if (DrawUtils.isClick(rect.left, rect.top, (int) rectRight, rect.bottom, clickPoint)) {
                             if (onOperateItemClickListener != null) {
                                 onOperateItemClickListener.onClick(data.get(i), testData.get(cellInfo.row));
-                            }
-                            clickPoint.set(-1, -1);
-                        }
-                    }*/
-                    if (data.size() > 0 && !TextUtils.isEmpty(data.get(0))){
-                        paint.setStyle(Paint.Style.FILL);
-                        paint.setColor(getResources().getColor(R.color.arc3));
-                        canvas.drawRect(rect.left, rect.top, rect.right - ((rect.right - rect.left) / 2), rect.bottom, paint);
-
-                        paint.setColor(getResources().getColor(R.color.arc1));
-                        paint.setTextSize(14 * table.getConfig().getZoom()); //以px为单位，乘以缩放
-                        paint.setTextAlign(Paint.Align.CENTER);
-//                        canvas.drawText(text,rect.centerX(), DrawUtils.getTextCenterY(rect.centerY(),paint) - 14 / 2 + 0, paint);
-                        canvas.drawText(data.get(0),rect.left + 60, rect.top + ((rect.bottom - rect.top) / 2), paint);
-
-                        if (DrawUtils.isClick(rect.left, rect.top, rect.right - ((rect.right - rect.left) / 2), rect.bottom, clickPoint)) {
-                            if (onOperateItemClickListener != null) {
-                                onOperateItemClickListener.onClick(data.get(0), testData.get(cellInfo.row));
-                            }
-                            clickPoint.set(-1, -1);
-                        }
-                    }
-                    if (data.size() > 1 && !TextUtils.isEmpty(data.get(1))){
-                        paint.setStyle(Paint.Style.FILL);
-                        paint.setColor(getResources().getColor(R.color.arc_text));
-                        canvas.drawRect(rect.left + ((rect.right - rect.left) / 2), rect.top, rect.right, rect.bottom, paint);
-
-                        paint.setColor(getResources().getColor(R.color.arc2));
-                        paint.setTextSize(14 * table.getConfig().getZoom()); //以px为单位，乘以缩放
-                        paint.setTextAlign(Paint.Align.CENTER);
-//                        canvas.drawText(text1,rect.centerX(), DrawUtils.getTextCenterY(rect.centerY(),paint) + 14 / 2 + 0, paint);
-                        canvas.drawText(data.get(1),rect.left + ((rect.right - rect.left) / 2) + 60, rect.top + ((rect.bottom - rect.top) / 2), paint);
-
-                        if (DrawUtils.isClick(rect.left + ((rect.right - rect.left) / 2), rect.top, rect.right, rect.bottom, clickPoint)) {
-                            if (onOperateItemClickListener != null) {
-                                onOperateItemClickListener.onClick(data.get(1), testData.get(cellInfo.row));
                             }
                             clickPoint.set(-1, -1);
                         }
