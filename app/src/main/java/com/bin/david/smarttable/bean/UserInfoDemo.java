@@ -1,5 +1,7 @@
 package com.bin.david.smarttable.bean;
 
+import java.util.List;
+
 /**
  * Created by huang on 2017/11/1.
  */
@@ -9,36 +11,26 @@ public class UserInfoDemo {
     private long time;
     private ChildListData childListData;
     private boolean isCheck;
-    private boolean isEdit;
-    private boolean isDel;
     private String url;
-    private Boolean isTest;
+    private List operationList;
 
 
-    public UserInfoDemo(String name, int age, long time, boolean isCheck, boolean isEdit, boolean isDel,ChildListData childListData) {
+    public UserInfoDemo(String name, int age, long time, boolean isCheck, List operationList,ChildListData childListData) {
         this.name = name;
         this.age = age;
         this.time = time;
         this.childListData = childListData;
         this.isCheck = isCheck;
-        this.isEdit = isEdit;
-        this.isDel = isDel;
+        this.operationList = operationList;
     }
 
-    public boolean isEdit() {
-        return isEdit;
+
+    public List getOperationList() {
+        return operationList;
     }
 
-    public void setEdit(boolean edit) {
-        isEdit = edit;
-    }
-
-    public boolean isDel() {
-        return isDel;
-    }
-
-    public void setDel(boolean del) {
-        isDel = del;
+    public void setOperationList(List operationList) {
+        this.operationList = operationList;
     }
 
     public boolean isCheck() {

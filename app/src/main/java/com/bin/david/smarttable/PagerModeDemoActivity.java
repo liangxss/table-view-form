@@ -1,18 +1,16 @@
 package com.bin.david.smarttable;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -20,26 +18,23 @@ import android.widget.Toast;
 import com.bin.david.form.core.SmartTable;
 import com.bin.david.form.core.TableConfig;
 import com.bin.david.form.data.CellInfo;
-import com.bin.david.form.data.TableInfo;
 import com.bin.david.form.data.column.Column;
 import com.bin.david.form.data.format.IFormat;
+import com.bin.david.form.data.format.OperationBean;
 import com.bin.david.form.data.format.bg.BaseBackgroundFormat;
 import com.bin.david.form.data.format.bg.BaseCellBackgroundFormat;
 import com.bin.david.form.data.format.count.ICountFormat;
-import com.bin.david.form.data.format.draw.IDrawFormat;
 import com.bin.david.form.data.format.draw.ImageResDrawFormat;
 import com.bin.david.form.data.format.draw.TextImageDrawFormat;
-import com.bin.david.form.data.format.draw.TextOperationDrawFormat;
+import com.bin.david.form.data.format.draw.OperationDrawFormat;
 import com.bin.david.form.data.format.title.TitleImageDrawFormat;
 import com.bin.david.form.data.style.FontStyle;
 import com.bin.david.form.data.table.PageTableData;
 import com.bin.david.form.data.table.TableData;
 import com.bin.david.form.listener.OnColumnItemClickListener;
 import com.bin.david.form.utils.DensityUtils;
-import com.bin.david.form.utils.DrawUtils;
 import com.bin.david.smarttable.bean.ChildListData;
 import com.bin.david.smarttable.bean.UserInfoDemo;
-import com.scwang.smartrefresh.layout.util.DelayedRunnable;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,16 +46,13 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
     private SmartTable<UserInfoDemo> table;
     private PageTableData<UserInfoDemo> tableData;
     private PointF clickPoint;
-    private int fontSize = 20;
-    private int[] colors;
-
+    private int fontSize = 14;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pager);
         FontStyle.setDefaultTextSize(DensityUtils.sp2px(this, 15)); //设置全局字体大小
-        colors = new int[]{getResources().getColor(R.color.github_con_1), getResources().getColor(R.color.github_con_2), getResources().getColor(R.color.github_con_3)};
         table = (SmartTable<UserInfoDemo>) findViewById(R.id.table);
         table.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -70,33 +62,40 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
                 return false;
             }
         });
+        clickPoint = new PointF(-1, -1);
+
         final List<UserInfoDemo> testData = new ArrayList<>();
         Random random = new Random();
+        OperationBean detailBean = new OperationBean();
+        detailBean.setShow("详情");
+        detailBean.setOperation("详情");
+
+        OperationBean editBean = new OperationBean();
+        editBean.setShow("编辑");
+        editBean.setOperation("编辑");
+
+        Bitmap bitmap = BitmapFactory.decodeResource(PagerModeDemoActivity.this.getResources(), R.mipmap.check);
+        OperationBean delBean = new OperationBean();
+        delBean.setShow(bitmap);
+        delBean.setOperation("删除");
+
         for (int i = 0; i < 500; i++) {
             ChildListData childListData = new ChildListData();
-            List<String> list= new ArrayList<>();
+            List<OperationBean> list= new ArrayList<>();
             if (i % 2 == 0){
-                list.add("详情");
-                list.add("编辑");
-                list.add("删除");
+                list.add(detailBean);
+                list.add(editBean);
+                list.add(delBean);
             } else if (i % 3 == 0){
-                list.add("详情");
+                list.add(detailBean);
             } else if (i % 5 == 0){
-                list.add("详情");
-                list.add("删除");
+                list.add(editBean);
+                list.add(delBean);
             } else {
             }
-            childListData.setChildList(list);
             testData.add(new UserInfoDemo("用户" + i, random.nextInt(70), System.currentTimeMillis()
-                    - random.nextInt(70) * 3600 * 1000 * 24, false, true, true,childListData));
+                    - random.nextInt(70) * 3600 * 1000 * 24, false, list, childListData));
         }
-        clickPoint = new PointF(-1, -1);
-        setOnOperateItemClickListener(new OnOperateItemClickListener() {
-            @Override
-            public void onClick(String text, UserInfoDemo bean) {
-                Toast.makeText(PagerModeDemoActivity.this, "点击了" + text + " 用户：" +  bean.getName(), Toast.LENGTH_SHORT).show();
-            }
-        });
         final Column<String> nameColumn = new Column<>("姓名", "name");
         nameColumn.setAutoCount(true);
         final Column<Integer> ageColumn = new Column<>("年龄", "age");
@@ -166,93 +165,8 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
             }
         });
 
-        Column<Boolean> editColumn = new Column<>("", "isEdit", new TextImageDrawFormat<Boolean>(size, size, TextImageDrawFormat.LEFT, 10) {
-            @Override
-            protected Context getContext() {
-                return PagerModeDemoActivity.this;
-            }
-
-            @Override
-            protected int getResourceID(Boolean isCheck, String value, int position) {
-                if (isCheck) {
-                    return R.mipmap.clock_fill;
-                }
-                return 0;
-            }
-        });
-        Column<Boolean> delColumn = new Column<>("", "isDel", new TextImageDrawFormat<Boolean>(size, size, TextImageDrawFormat.LEFT, 10) {
-            @Override
-            protected Context getContext() {
-                return PagerModeDemoActivity.this;
-            }
-
-            @Override
-            protected int getResourceID(Boolean isCheck, String value, int position) {
-                if (isCheck) {
-                    return R.mipmap.check;
-                }
-                return 0;
-            }
-        });
-
-
-        Column totalColumn1 = new Column("操作", editColumn, delColumn);
-        Column<List> columnOperate = new Column<>("操作", "childListData.child", new IDrawFormat<List>() {
-            @Override
-            public int measureWidth(Column<List> column, int position, TableConfig config) {
-                return DensityUtils.dp2px(PagerModeDemoActivity.this, 120);
-            }
-
-            @Override
-            public int measureHeight(Column<List> column, int position, TableConfig config) {
-                return DensityUtils.dp2px(PagerModeDemoActivity.this, 30);
-            }
-
-            @Override
-            public void draw(Canvas canvas, Rect rect, CellInfo<List> cellInfo, TableConfig config) {
-                Paint paint = config.getPaint();
-                paint.setStyle(Paint.Style.FILL);
-                List<String> data = cellInfo.data;
-                if (data!= null && data.size() > 0){
-                    // 获取每份宽度
-                    float right = (rect.right - rect.left) / data.size();
-//                    Log.e("PagerModeDemoActivity", "right: " + right);
-                    for (int i = 0; i < data.size(); i++) {
-                        // 每块右坐标为：当前rect右坐标 减 每块宽度乘以剩余份数
-                        // 例如：每份70，右坐标800，
-                        // 第一块为：800-(70*(3-(0+1)))=660
-                        // 第二块为：800-(70*(3-(1+1)))=730
-                        // 第二块为：800-(70*(3-(2+1)))=800
-                        float rectRight = rect.right - right * (data.size() - (i + 1));
-
-                        // 绘制背景颜色
-                        paint.setColor(colors[i]);
-                        canvas.drawRect(rect.left + (right * i), rect.top, rectRight, rect.bottom, paint);
-
-                        // 绘制文字
-                        paint.setColor(getResources().getColor(R.color.colorAccent));
-                        paint.setTextSize(fontSize * table.getConfig().getZoom()); //以px为单位，乘以缩放
-                        paint.setTypeface(Typeface.DEFAULT_BOLD);
-                        paint.setTextAlign(Paint.Align.CENTER);
-                        // (每份宽度 * 当前份)-(每份除以2)
-                        float textX = (right * (i + 1) + rect.left) - (right / 2);
-                        float textY = DrawUtils.getTextCenterY(rect.centerY(),paint);
-                        canvas.drawText(data.get(i),textX, textY, paint);
-
-                        // 点击事件
-                        if (DrawUtils.isClick(rect.left, rect.top, (int) rectRight, rect.bottom, clickPoint)) {
-                            if (onOperateItemClickListener != null) {
-                                onOperateItemClickListener.onClick(data.get(i), testData.get(cellInfo.row));
-                            }
-                            clickPoint.set(-1, -1);
-                        }
-                    }
-                }
-            }
-
-
-        });
-        TextOperationDrawFormat<List> textOperationDrawFormat = new TextOperationDrawFormat<List>(size, size, getResources().getColor(R.color.colorAccent), colors) {
+        int[] colors = new int[]{getResources().getColor(R.color.github_con_1), getResources().getColor(R.color.github_con_2), getResources().getColor(R.color.github_con_3)};
+        OperationDrawFormat<List> operationDrawFormat = new OperationDrawFormat<List>(size, size, fontSize, getResources().getColor(R.color.colorAccent), colors) {
             @Override
             public int measureWidth(Column<List> column, int position, TableConfig config) {
                 return DensityUtils.dp2px(PagerModeDemoActivity.this, 120);
@@ -279,17 +193,18 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
             }
 
         };
-        textOperationDrawFormat.setOnTextOperateItemClickListener(new TextOperationDrawFormat.OnTextOperateItemClickListener() {
+        operationDrawFormat.setOnTextOperateItemClickListener(new OperationDrawFormat.OnTextOperateItemClickListener() {
             @Override
-            public void onClick(Object item, CellInfo cellInfo) {
-                Toast.makeText(PagerModeDemoActivity.this, "点击了" + item + " 用户：" +  testData.get(cellInfo.row).getName(), Toast.LENGTH_SHORT).show();
-
+            public void onClick(OperationBean item, CellInfo cellInfo) {
+                if (item != null){
+                    Toast.makeText(PagerModeDemoActivity.this, "点击了" + item.getOperation() + " 用户：" +  testData.get(cellInfo.row).getName(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
-        Column<List> columnOperate1 = new Column<>("操作1", "childListData.child", textOperationDrawFormat);
+        Column<List> columnOperate = new Column<>("操作", "operationList", operationDrawFormat);
 
-        tableData = new PageTableData<>("测试", testData, columnCheck1, nameColumn, ageColumn, columnCheck2, timeColumn, columnOperate, columnOperate1);
 
+        tableData = new PageTableData<>("测试", testData, columnCheck1, nameColumn, ageColumn, columnCheck2, timeColumn, columnOperate);
         tableData.setTitleDrawFormat(new TitleImageDrawFormat(size, size, TitleImageDrawFormat.RIGHT, 10) {
             @Override
             protected Context getContext() {
@@ -326,6 +241,28 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
                     return R.mipmap.level2;
                 }
                 return 0;
+            }
+        });
+        tableData.setOnRowClickListener(new TableData.OnRowClickListener<UserInfoDemo>() {
+            @Override
+            public void onClick(Column column, UserInfoDemo userInfoDemo, int col, int row) {
+                if ("操作".equals(column.getColumnName())){
+                    return;
+                }
+                userInfoDemo.setCheck(!userInfoDemo.isCheck());
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+//                        table.invalidate();
+                        table.notifyDataChanged();
+                    }
+                }, 200);
+            }
+        });
+        columnOperate.setOnColumnItemClickListener(new OnColumnItemClickListener<List>() {
+            @Override
+            public void onClick(Column<List> column, String value, List list, int position) {
+
             }
         });
         ageColumn.setOnColumnItemClickListener(new OnColumnItemClickListener<Integer>() {
@@ -384,14 +321,5 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
 
     }
 
-
-    private OnOperateItemClickListener onOperateItemClickListener;
-    public void setOnOperateItemClickListener(OnOperateItemClickListener onOperateItemClickListener){
-        this.onOperateItemClickListener = onOperateItemClickListener;
-    }
-    public interface OnOperateItemClickListener {
-
-        void onClick(String text, UserInfoDemo bean);
-    }
 
 }
