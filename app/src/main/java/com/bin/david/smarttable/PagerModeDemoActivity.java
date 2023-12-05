@@ -281,8 +281,8 @@ public class PagerModeDemoActivity extends AppCompatActivity implements View.OnC
         };
         textOperationDrawFormat.setOnTextOperateItemClickListener(new TextOperationDrawFormat.OnTextOperateItemClickListener() {
             @Override
-            public void onClick(String text, CellInfo cellInfo) {
-                Toast.makeText(PagerModeDemoActivity.this, "点击了" + text + " 用户：" +  testData.get(cellInfo.row).getName(), Toast.LENGTH_SHORT).show();
+            public void onClick(Object item, CellInfo cellInfo) {
+                Toast.makeText(PagerModeDemoActivity.this, "点击了" + item + " 用户：" +  testData.get(cellInfo.row).getName(), Toast.LENGTH_SHORT).show();
 
             }
         });
